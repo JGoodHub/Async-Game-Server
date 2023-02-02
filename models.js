@@ -25,25 +25,23 @@ const UserSchema = new Schema({
     },
 }, { timestamps: true });
 
-const PublicUserDataSchema = new Schema({
-    user_id: {
-        type: Number
-    },
-    display_name: {
-        type: String
-    },
-    public_user_state: {
-        type: String
-    }
+const RoomUserDataSchema = new Schema({
+    user_id: Number,
+    display_name: String,
+    public_user_state: String
 });
 
 const CommandSchema = new Schema({
-    source_user_id: {
+    sender_user_id: {
         type: Number,
         required: true
     },
     command_type: {
         type: String,
+        required: true
+    },
+    timestamp: {
+        type: Number,
         required: true
     },
     data: {
@@ -54,12 +52,18 @@ const CommandSchema = new Schema({
 
 const RoomSchema = new Schema({
     room_id: Number,
-    primary_user_data: PublicUserDataSchema,
-    secondary_user_data: PublicUserDataSchema,
     room_status: {
         type: String,
         enum: ['CREATED', 'WAITING_FOR_OPPONENT', 'ACTIVE', 'PLAYER_ONE_LEFT', 'PLAYER_TWO_LEFT', 'CLOSED', 'EXPIRED'],
         default: 'CREATED'
+    },
+    primary_user_data: {
+        type: RoomUserDataSchema,
+        default: null
+    },
+    secondary_user_data: {
+        type: RoomUserDataSchema,
+        default: null
     },
     commandInvocations: [CommandSchema]
 }, { timestamps: true });
