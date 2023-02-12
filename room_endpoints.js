@@ -132,6 +132,88 @@ module.exports = {
                 });
         });
 
+        app.get("/rooms/create_or_join_room", (req, res) =>
+        {
+            let user_id = UserService.ValidateAndExtractUserID(req.query.user_id, (err) =>
+            {
+                console.log(err);
+                res.sendStatus(400);
+                return;
+            });
+
+            // Find the user creating the room
+            UserService.GetUserByID(user_id,
+                (db_user) => // Found
+                {
+                    // Look for available rooms, if there aren't any create a new one
+                    Room.findOne({ room_status: "WAITING_FOR_OPPONENT" })
+                        .then((db_room) =>
+                        {
+                            if (db_room == null) // No room to join so create one
+                            {
+                                // Create the room with the populated primary user date
+                                let room_user_data = UserService.GetRoomUserDataFromUser(db_user);
+
+                                let new_room = new Room({
+                                    room_id: Math.floor(Math.random() * 10000) + 10000,
+                                    primary_user_data: room_user_data,
+                                    room_status: 'WAITING_FOR_OPPONENT'
+                                });
+
+                                new_room.save()
+                                    .then((new_room_saved) =>
+                                    {
+                                        console.log(`Created new room in the database ${new_room_saved.room_id}`);
+                                        res.send(new_room_saved);
+                                    })
+                                    .catch((err) =>
+                                    {
+                                        console.log(`Error while creating a new room ${err}`);
+                                        res.sendStatus(500);
+                                    });
+                            }
+                            else // Found a room so join it
+                            {
+                                // Populate the secondary player info of the room
+                                db_room.secondary_user_data = {
+                                    user_id: db_user.user_id,
+                                    display_name: `${db_user.user_name}#${db_user.user_tag}`,
+                                    public_user_state: db_user.public_user_state
+                                }
+
+                                db_room.room_status = 'ACTIVE';
+
+                                db_room.save()
+                                    .then((db_room_saved) =>
+                                    {
+                                        console.log(`Joined room in the db ${db_room_saved.room_id}`);
+                                        res.send(db_room_saved);
+                                    })
+                                    .catch((err) =>
+                                    {
+                                        console.log(`Error while updating the db room ${err}`);
+                                        res.sendStatus(500);
+                                    });
+                            }
+                        })
+                        .catch((err) =>
+                        {
+                            console.log(`Error when searching for a rooms for the user with id ${req.query.user_id} ${err}`);
+                            res.sendStatus(500);
+                        });
+                },
+                () => // Missing
+                {
+                    console.log(`Failed to find user with the id ${req.query.user_id}`);
+                    res.sendStatus(404);
+                },
+                (err) => // Error
+                {
+                    console.log(`Error when searching for user with id ${req.query.user_id} ${err}`);
+                    res.sendStatus(500);
+                });
+        })
+
         app.get("/rooms/leave_room", (req, res) =>
         {
             let room_id = RoomService.ValidateAndExtractRoomID(req.query.room_id, (err) =>
@@ -261,7 +343,7 @@ module.exports = {
         });
 
         app.get("/rooms/get_rooms_with_status", (req, res) =>
-        {            
+        {
             let room_status_param = req.query.room_status;
 
             Room.find({ room_status: room_status_param })
