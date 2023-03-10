@@ -145,11 +145,12 @@ module.exports = {
             UserService.GetUserByID(user_id,
                 (db_user) => // Found
                 {
-                    // Look for available rooms, if there aren't any create a new one
-                    Room.findOne({ room_status: "WAITING_FOR_OPPONENT" })
+                    // Look for available rooms to join, if there aren't any create a new one
+                    Room.findOne({ room_status:'WAITING_FOR_OPPONENT' })
                         .then((db_room) =>
                         {
-                            if (db_room == null) // No room to join so create one
+                            console.log(db_room.room_id);
+                            if (db_room == null || db_room.primary_user_data.user_id == db_user.user_id) // No room to join so create one
                             {
                                 // Create the room with the populated primary user date
                                 let room_user_data = UserService.GetRoomUserDataFromUser(db_user);
