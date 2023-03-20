@@ -1,63 +1,60 @@
-import { User } from './models';
+import { IRoomUserData, User, IUser } from './models';
+import { Destruct } from './utils';
 
-export const ValidateAndExtractUserID = (user_id, errorCallback) =>
+export const ExtractUserID = (userId: string, reject): Number =>
 {
-    if (user_id.length != 5)
+    if (userId.length != 5)
     {
-        errorCallback(`user_id is incorrect length ${user_id}`);
+        reject(`Server: userId is incorrect length ${userId}`);
         return -1;
     }
 
-    let user_id_num = Number(user_id);
+    let userId_num = Number(userId);
 
-    if (Number.isNaN(user_id_num))
+    if (Number.isNaN(userId_num))
     {
-        errorCallback(`user_id is not a number ${user_id}`);
+        reject(`Server: userId is not a number ${userId}`);
         return -1;
     }
 
-    return user_id_num;
+    return userId_num;
 }
 
-export const GetUserByID = (user_id, foundCallback, missingCallback, errorCallback) =>
+export const GetUserByID = async (userId: Number): Promise<IUser> =>
 {
-    // Extract the user_id as a number if its a string
-    if (typeof user_id == "string")
-    {
-        user_id = module.exports.ValidateAndExtractUserID(user_id);
+    const [dbUser, error] = await Destruct(User.findOne({ userId: userId }));
 
-        if (user_id == -1)
-        {
-            missingCallback();
-            return;
-        }
-    }
+    if (error)
+        throw error;
 
-    // Find the first matching user in the db
-    User.findOne({ user_id: user_id })
-        .then((db_user) =>
-        {
-            if (db_user == null)
-            {
-                missingCallback();
-            }
+    if (dbUser)
+        return dbUser;
 
-            else
-            {
-                foundCallback(db_user);
-            }
-        })
-        .catch((err) =>
-        {
-            errorCallback(err);
-        });
+    throw Error('not found');
+
 }
 
-export const GetRoomUserDataFromUser = (db_user) =>
+export const CreateAndSaveGuestUser = async (): Promise<IUser> =>
+{
+    const newUser = new User({
+        userId: Math.floor(Math.random() * 10000) + 10000,
+        user_name: 'Guest',
+        user_tag: Math.floor(Math.random() * 1000)
+    });
+
+    const [dbUser, saveError] = await Destruct(newUser.save());
+
+    if (saveError)
+        throw saveError;
+
+    return dbUser;
+}
+
+export const GetRoomUserDataFromUser = (dbUser: IUser): IRoomUserData =>
 {
     return {
-        user_id: db_user.user_id,
-        display_name: `${db_user.user_name}#${db_user.user_tag}`,
-        public_user_state: db_user.public_user_state
+        userId: dbUser.userId,
+        displayName: `${dbUser.userName}#${dbUser.userTag}`,
+        publicUserState: dbUser.publicUserState
     };
 }

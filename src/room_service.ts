@@ -1,53 +1,45 @@
-import { Room } from './models';
+import { IRoom, IUser, Room } from './models';
+import { GetRoomUserDataFromUser } from './user_service';
+import { Destruct } from './utils';
 
-export const ValidateAndExtractRoomID = (room_id, errorCallback) =>
+export const ExtractRoomID = (roomId: string, reject): Number =>
 {
-    if (room_id.length != 5)
+    if (roomId.length != 5)
     {
-        errorCallback(`room_id is incorrect length ${room_id}`);
+        reject(`roomId is incorrect length ${roomId}`);
         return -1;
     }
 
-    let room_id_num = Number(room_id);
+    let roomId_num = Number(roomId);
 
-    if (Number.isNaN(room_id_num))
+    if (Number.isNaN(roomId_num))
     {
-        errorCallback(`room_id is not a number ${room_id}`);
+        reject(`roomId is not a number ${roomId}`);
         return -1;
     }
 
-    return room_id_num;
+    return roomId_num;
 }
 
-export const GetRoomByID = (room_id, foundCallback, missingCallback, errorCallback) =>
+export const GetRoomByID = async (roomId: Number): Promise<IRoom | null> =>
 {
-    // Validate the user_id
-    if (typeof room_id == "string")
-    {
-        room_id = module.exports.ValidateAndExtractRoomID(room_id);
+    return Room.findOne({ roomId: roomId });
+}
 
-        if (room_id == -1)
-        {
-            missingCallback();
-            return;
-        }
-    }
+export const CreateAndSaveNewRoom = async (primaryUser: IUser): Promise<IRoom> =>
+{
+    const roomUserData = GetRoomUserDataFromUser(primaryUser);
 
-    Room.findOne({ room_id: room_id })
-        .then((db_room) =>
-        {
-            if (db_room == null)
-            {
-                missingCallback();
-            }
+    let newRoom = new Room({
+        roomId: Math.floor(Math.random() * 10000) + 10000,
+        primary_user_data: roomUserData,
+        room_status: 'WAITING_FOR_OPPONENT'
+    });
 
-            else
-            {
-                foundCallback(db_room);
-            }
-        })
-        .catch((err) =>
-        {
-            errorCallback(err);
-        });
+    const [dbRoom, saveError] = await Destruct(newRoom.save());
+
+    if (saveError)
+        throw saveError;
+
+    return dbRoom;
 }

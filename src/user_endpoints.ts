@@ -1,70 +1,66 @@
 import { User } from './models';
 
-import { ValidateAndExtractUserID, GetUserByID } from './user_service';
+import { CreateAndSaveGuestUser, ExtractUserID, GetUserByID } from './user_service';
+import { Destruct } from './utils';
 
 export const RegisterUserEndpoints = (app) =>
 {
 
-    app.get("/users/create_user_guest", (req, res) =>
+    app.get("/users/create-user-guest", async (req, res) =>
     {
-        let new_user = new User({
-            user_id: Math.floor(Math.random() * 10000) + 10000,
-            user_tag: Math.floor(Math.random() * 1000)
-        });
+        const [dbUser, saveError] = await Destruct(CreateAndSaveGuestUser());
 
-        new_user.save()
-            .then((db_user) =>
-            {
-                console.log(`Created new guest user in the database ${db_user.user_id}`);
-                res.send(db_user);
-            })
-            .catch((err) =>
-            {
-                console.log(`Error while creating a new guest user ${err}`);
-                res.sendStatus(500);
-            });
-    });
-
-    app.get("/users/get_all_users", (req, res) =>
-    {
-        User.find()
-            .then((db_users) =>
-            {
-                console.log(`Request for all users`);
-                res.send(db_users);
-            })
-            .catch((err) =>
-            {
-                console.log(`Error when fetching all users ${err}`);
-                res.sendStatus(500);
-            });
-    });
-
-    app.get("/users/get_user_by_id", (req, res) =>
-    {
-        let user_id = ValidateAndExtractUserID(req.query.user_id, (err) =>
+        if (saveError)
         {
-            console.log(err);
+            console.log(`Server: Error while creating a new guest user ${saveError}`);
+            res.sendStatus(500);
+            return;
+        }
+
+        console.log(`Server: Created new guest user in the database ${dbUser.userId}`);
+        res.send(dbUser);
+    });
+
+    app.get("/users/get-all-users", async (req, res) =>
+    {
+        const [dbUsers, findError] = await User.find();
+
+        if (findError)
+        {
+            console.error(`Server: Error when fetching all users ${findError}`);
+            res.sendStatus(500);
+            return;
+        }
+
+        console.log(`Request for all users`);
+        res.send(dbUsers);
+    });
+
+    app.get("/users/get-user-by-id", async (req, res) =>
+    {
+        const userId = ExtractUserID(req.query.userId, (invalidError) =>
+        {
+            console.error(invalidError);
             res.sendStatus(400);
             return;
         });
 
-        GetUserByID(user_id,
-            (db_user) => // Found
-            {
-                console.log(`Request for user with the id ${user_id}`);
-                res.send(db_user);
-            },
-            () => // Missing
-            {
-                console.log(`Failed to find user with the id ${req.query.user_id}`);
-                res.sendStatus(404);
-            },
-            (err) => // Error
-            {
-                console.log(`Error when searching for user with id ${req.query.user_id} ${err}`);
-                res.sendStatus(500);
-            });
-    });
+        const [dbUser, getUserError] = await Destruct(GetUserByID(userId));
 
+        if (getUserError)
+        {
+            console.error(`Server: Error when searching for user with id ${req.query.userId}  ${getUserError}`);
+            res.sendStatus(500);
+            return;
+        }
+
+        if (dbUser)
+        {
+            console.log(`Server: Request for user with the id ${userId}`);
+            res.send(dbUser); return;
+        }
+
+        console.log(`Server: Failed to find user with the id ${req.query.userId}`);
+        res.sendStatus(404);
+    });
 }
