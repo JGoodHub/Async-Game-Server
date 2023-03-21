@@ -1,5 +1,5 @@
 
-export const Destruct = async (targetPromise) =>
+export async function Destruct<ReturnType> (targetPromise): Promise<[ReturnType | null, any]>
 {
     try
     {

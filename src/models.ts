@@ -1,6 +1,6 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 
-export interface IUser
+export interface IUser extends Document
 {
     userId: Number,
     userName: string,
@@ -82,7 +82,7 @@ export const CommandSchema = new Schema<ICommand>({
     }
 });
 
-export interface IRoom
+export interface IRoom extends Document
 {
     roomId: Number,
     roomStatus: string,

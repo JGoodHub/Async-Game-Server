@@ -2,12 +2,12 @@
   "name": "async-game-server",
   "version": "1.0.0",
   "description": "A bare bones http based server designed for turn based games.",
-  "main": "src/app.ts",
+  "main": "src/App.ts",
   "scripts": {
     "start": "set TS_NODE_FILES=true & node -r ts-node/register/transpile-only src/app.ts",
-    "nodemon": "nodemon --watch src/**/*.ts --watch src/**/*.js --exec node -r ts-node/register/transpile-only src/app.ts",
+    "nodemon": "nodemon --watch src/**/*.ts --watch src/**/*.js --exec node -r ts-node/register/transpile-only src/App.ts",
     "compile": "tsc",
-    "compiled": "node bin/app.js"
+    "compiled": "node bin/App.js"
   },
   "author": "",
   "license": "ISC",

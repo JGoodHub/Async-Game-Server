@@ -5,8 +5,8 @@ import cors from 'cors';
 
 import mongoose from 'mongoose';
 
-import { RegisterUserEndpoints } from './user_endpoints';
-import { RegisterRoomEndpoints } from './room_endpoints';
+import { RegisterUserEndpoints } from './UserEndpoints';
+import { RegisterRoomEndpoints } from './RoomEndpoints';
 
 const secretsData = fs.readFileSync('./secrets.json', { encoding: 'utf8', flag: 'r' });
 const secretsJson = JSON.parse(secretsData);
@@ -28,7 +28,7 @@ mongoose.connect(databaseURI)
 
         // Call to check the servers up
 
-        app.get("/server_status", (req, res) => {
+        app.get("/server-status", (req, res) => {
             res.sendStatus(200);
         });
 
