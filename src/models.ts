@@ -1,5 +1,28 @@
 import { Schema, model, Document } from 'mongoose';
 
+
+export interface ICompactUserData
+{
+    userId: Number,
+    displayName: string,
+    publicUserState?: string,
+};
+
+export const CompactUserSchema = new Schema<ICompactUserData>({
+    userId: {
+        type: Number,
+        required: true,
+    },
+    displayName: {
+        type: String,
+        required: true
+    },
+    publicUserState: {
+        type: String,
+        default: ""
+    }
+});
+
 export interface IUser extends Document
 {
     userId: Number,
@@ -7,6 +30,8 @@ export interface IUser extends Document
     userTag: Number,
     privateUserState?: string,
     publicUserState?: string,
+    friendRequests?: [ICompactUserData]
+    friends?: [ICompactUserData]
 };
 
 export const UserSchema = new Schema<IUser>({
@@ -31,28 +56,8 @@ export const UserSchema = new Schema<IUser>({
         type: String,
         default: ""
     },
-});
-
-export interface IRoomUserData
-{
-    userId: Number,
-    displayName: string,
-    publicUserState?: string,
-};
-
-export const RoomUserDataSchema = new Schema<IRoomUserData>({
-    userId: {
-        type: Number,
-        required: true,
-    },
-    displayName: {
-        type: String,
-        required: true
-    },
-    publicUserState: {
-        type: String,
-        default: ""
-    }
+    friendRequests: [CompactUserSchema],    
+    friends: [CompactUserSchema],    
 });
 
 export interface ICommand
@@ -86,8 +91,8 @@ export interface IRoom extends Document
 {
     roomId: Number,
     roomStatus: string,
-    primaryUserData: IRoomUserData | null,
-    secondaryUserData: IRoomUserData | null,
+    primaryUserData: ICompactUserData | null,
+    secondaryUserData: ICompactUserData | null,
     commandInvocations: [ICommand]
 }
 
@@ -99,11 +104,11 @@ export const RoomSchema = new Schema<IRoom>({
         default: 'CREATED'
     },
     primaryUserData: {
-        type: RoomUserDataSchema,
+        type: CompactUserSchema,
         default: null
     },
     secondaryUserData: {
-        type: RoomUserDataSchema,
+        type: CompactUserSchema,
         default: null
     },
     commandInvocations: [CommandSchema]

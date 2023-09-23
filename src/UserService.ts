@@ -1,4 +1,4 @@
-import { IRoomUserData, User, IUser } from './Models';
+import { ICompactUserData, User, IUser } from './Models';
 import { Destruct } from './Utils';
 
 export const ExtractUserID = (userId: string, reject): Number =>
@@ -41,7 +41,7 @@ export const CreateAndSaveGuestUser = async (): Promise<[IUser, any]> =>
     return [userSaved, saveError];
 }
 
-export const GetRoomUserDataFromUser = (dbUser: IUser): IRoomUserData =>
+export const GetRoomUserDataFromUser = (dbUser: IUser): ICompactUserData =>
 {
     return {
         userId: dbUser.userId,
